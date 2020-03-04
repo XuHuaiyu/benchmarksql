@@ -20,6 +20,7 @@ public class LoadData
     private static jTPCCRandom  rnd;
     private static String       fileLocation = null;
     private static String       csvNullValue = null;
+    private static String tableName;
 
     private static int          numWarehouses;
     private static int          numWorkers;
@@ -93,6 +94,11 @@ public class LoadData
 	numWorkers      = iniGetInt("loadWorkers", 4);
 	fileLocation    = iniGetString("fileLocation");
 	csvNullValue    = iniGetString("csvNullValue", "NULL");
+	// When tableNames == `all`, we generate all the tables.
+	// When tableNames == `customer`, we only generate `customer`, `history`, `config`, `item`, `district`.
+	// When tableName == `order`, we only generate `order`, `orderLine`, `newOrder`.
+	// When tableName == `stock`, we only generate `stock`, `warehouse`.
+	tableName = iniGetString("tableName", "all");
 
 	/*
 	 * If CSV files are requested, open them all.
@@ -103,26 +109,32 @@ public class LoadData
 
 	    try
 	    {
-		configCSV = new BufferedWriter(new FileWriter(fileLocation +
-							      "bmsql_config.csv"));
-		itemCSV = new BufferedWriter(new FileWriter(fileLocation +
-							      "bmsql_item.csv"));
-		warehouseCSV = new BufferedWriter(new FileWriter(fileLocation +
-							      "bmsql_warehouse.csv"));
-		districtCSV = new BufferedWriter(new FileWriter(fileLocation +
-							      "bmsql_district.csv"));
-		stockCSV = new BufferedWriter(new FileWriter(fileLocation +
-							      "bmsql_stock.csv"));
-		customerCSV = new BufferedWriter(new FileWriter(fileLocation +
-							      "bmsql_customer.csv"));
-		historyCSV = new BufferedWriter(new FileWriter(fileLocation +
-							      "bmsql_history.csv"));
-		orderCSV = new BufferedWriter(new FileWriter(fileLocation +
-							      "bmsql_oorder.csv"));
-		orderLineCSV = new BufferedWriter(new FileWriter(fileLocation +
-							      "bmsql_order_line.csv"));
-		newOrderCSV = new BufferedWriter(new FileWriter(fileLocation +
-							      "bmsql_new_order.csv"));
+			if (tableName.contains("all") || tableName.contains("customer")) {
+				customerCSV = new BufferedWriter(new FileWriter(fileLocation +
+						"bmsql_customer.csv"));
+				historyCSV = new BufferedWriter(new FileWriter(fileLocation +
+						"bmsql_history.csv"));
+				configCSV = new BufferedWriter(new FileWriter(fileLocation +
+						"bmsql_config.csv"));
+				itemCSV = new BufferedWriter(new FileWriter(fileLocation +
+						"bmsql_item.csv"));
+				districtCSV = new BufferedWriter(new FileWriter(fileLocation +
+						"bmsql_district.csv"));
+			}
+			if (tableName.contains("all") || tableName.contains("order")) {
+				orderCSV = new BufferedWriter(new FileWriter(fileLocation +
+						"bmsql_oorder.csv"));
+				orderLineCSV = new BufferedWriter(new FileWriter(fileLocation +
+						"bmsql_order_line.csv"));
+				newOrderCSV = new BufferedWriter(new FileWriter(fileLocation +
+						"bmsql_new_order.csv"));
+			}
+			if (tableName.contains("all") || tableName.contains("stock")) {
+				warehouseCSV = new BufferedWriter(new FileWriter(fileLocation +
+						"bmsql_warehouse.csv"));
+				stockCSV = new BufferedWriter(new FileWriter(fileLocation +
+						"bmsql_stock.csv"));
+			}
 	    }
 	    catch (IOException ie)
 	    {
@@ -148,7 +160,7 @@ public class LoadData
 		dbConn.setAutoCommit(false);
 		if (writeCSV)
 		    workers[i] = new LoadDataWorker(i, csvNullValue,
-							rnd.newRandom());
+							rnd.newRandom(), tableName);
 		else
 		    workers[i] = new LoadDataWorker(i, dbConn,
 							rnd.newRandom());
@@ -184,16 +196,22 @@ public class LoadData
 	{
 	    try
 	    {
-		configCSV.close();
-		itemCSV.close();
-		warehouseCSV.close();
-		districtCSV.close();
-		stockCSV.close();
-		customerCSV.close();
-		historyCSV.close();
-		orderCSV.close();
-		orderLineCSV.close();
-		newOrderCSV.close();
+	    	if (tableName.contains("all") || tableName.contains("customer")){
+				customerCSV.close();
+				historyCSV.close();
+				configCSV.close();
+				itemCSV.close();
+				districtCSV.close();
+			}
+			if (tableName.contains("all") || tableName.contains("order")) {
+				orderCSV.close();
+				orderLineCSV.close();
+				newOrderCSV.close();
+			}
+			if (tableName.contains("all") || tableName.contains("stock")) {
+				warehouseCSV.close();
+				stockCSV.close();
+			}
 	    }
 	    catch (IOException ie)
 	    {
